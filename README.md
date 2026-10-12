@@ -1,4 +1,4 @@
-# Noor Club
+# Sakinah
 
 **Little steps, closer to Allah.**
 

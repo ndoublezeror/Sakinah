@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #FFF5F8;
+  --bg-card: #FFFFFF;
+  --text-main: #493344;
+  --text-muted: #8a6b7a;
+  --border-soft: #F6B8CF;
+  --shadow-color: 220 40% 60%;
+}
+
+.dark {
+  --bg-main: #2a1a25;
+  --bg-card: #3a2835;
+  --text-main: #FFF5F8;
+  --text-muted: #c4a5b4;
+  --border-soft: #5a3a4a;
+  --shadow-color: 320 40% 8%;
+}
+
+html {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+html[dir="rtl"] {
+  font-family: 'Noto Naskh Arabic', 'Amiri', system-ui, sans-serif;
+}
+
+html[dir="rtl"] .font-arabic {
+  font-family: 'Noto Naskh Arabic', 'Amiri', serif;
+}
+
+.font-arabic {
+  font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #F6B8CF; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb { background: #5a3a4a; }
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+@keyframes gentle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.97); }
+}
+.animate-gentle-pulse { animation: gentle-pulse 2s ease-in-out infinite; }
+
+@keyframes pop-in {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in { animation: pop-in 0.4s ease-out; }
+
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.4s ease-out; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.5s ease-out; }
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 20s linear infinite; }
+
+@keyframes check-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.animate-check-pop { animation: check-pop 0.3s ease-out; }
+
+/* Islamic geometric pattern background */
+.islamic-pattern {
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(246, 184, 207, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(232, 221, 252, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(232, 203, 145, 0.04) 0%, transparent 70%);
+}
+
+.islamic-pattern-dark {
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(246, 184, 207, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(232, 221, 252, 0.05) 0%, transparent 50%);
+}
+
+/* Utility classes using CSS variables for theme-aware colors */
+.bg-app { background-color: var(--bg-main); }
+.bg-card { background-color: var(--bg-card); }
+.text-main { color: var(--text-main); }
+.text-muted { color: var(--text-muted); }
+.border-soft { border-color: var(--border-soft); }
+
+/* Card shadow */
+.card-shadow {
+  box-shadow: 0 4px 24px -8px hsl(var(--shadow-color) / 0.15);
+}
+.dark .card-shadow {
+  box-shadow: 0 4px 24px -8px hsl(var(--shadow-color) / 0.3);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid #D96C99;
+  outline-offset: 2px;
+}
+
+/* No transition on interactive elements being immediately styled */
+button, a {
+  transition: all 0.2s ease;
+}

@@ -114,6 +114,8 @@ const translations = {
     dailyDhikrBonus: 'Daily dhikr bonus earned',
     notYetEarned: 'Not yet earned today',
     todaysSessions: "Today's Sessions",
+    milestoneReached: 'completed! +1 bonus point',
+    progressRestored: 'Your progress was restored',
 
     // Quran Journal
     surah: 'Surah',
@@ -385,6 +387,8 @@ const translations = {
     dailyDhikrBonus: 'تم الحصول على مكافأة التسبيح اليومية',
     notYetEarned: 'لم تُحصل بعد اليوم',
     todaysSessions: 'جلسات اليوم',
+    milestoneReached: 'اكتمل! +١ نقطة إضافية',
+    progressRestored: 'تم استرجاع تقدمك',
 
     // Quran Journal
     surah: 'السورة',

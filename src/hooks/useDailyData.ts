@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getDateInTimezone } from '@/lib/date';
 import { useAuth } from '@/contexts/AuthContext';
 
 export type DailyLog = {
@@ -96,8 +97,19 @@ export function useDailyData(date?: string) {
   const [dhikrSessions, setDhikrSessions] = useState<DhikrSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [groupTimezone, setGroupTimezone] = useState('UTC');
+  const [currentDate, setCurrentDate] = useState(() => getDateInTimezone('UTC'));
 
-  const logDate = date || new Date().toISOString().split('T')[0];
+  useEffect(() => {
+    if (!user || date) return;
+    const cachedTimezone = localStorage.getItem(`noor-club-timezone:${user.id}`);
+    if (cachedTimezone) {
+      setGroupTimezone(cachedTimezone);
+      setCurrentDate(getDateInTimezone(cachedTimezone));
+    }
+  }, [user, date]);
+
+  const logDate = date || currentDate;
 
   const fetchAll = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -105,12 +117,33 @@ export function useDailyData(date?: string) {
     setError(null);
 
     try {
+      let targetDate = logDate;
+      if (!date) {
+        const { data: memberships } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id);
+        const groupIds = (memberships || []).map(member => member.group_id);
+        if (groupIds.length > 0) {
+          const { data: groups } = await supabase
+            .from('groups')
+            .select('timezone')
+            .in('id', groupIds)
+            .limit(1);
+          const timezone = groups?.[0]?.timezone || 'UTC';
+          setGroupTimezone(timezone);
+          localStorage.setItem(`noor-club-timezone:${user.id}`, timezone);
+          targetDate = getDateInTimezone(timezone);
+          setCurrentDate(targetDate);
+        }
+      }
+
       const [logRes, pointsRes, sunnahRes, optAdhkarRes, dhikrRes] = await Promise.all([
-        supabase.from('daily_logs').select('*').eq('user_id', user.id).eq('log_date', logDate).maybeSingle(),
-        supabase.rpc('get_daily_points', { p_date: logDate }),
-        supabase.from('sunnah_prayer_logs').select('*').eq('user_id', user.id).eq('log_date', logDate),
-        supabase.from('optional_adhkar_logs').select('*').eq('user_id', user.id).eq('log_date', logDate),
-        supabase.from('dhikr_sessions').select('*').eq('user_id', user.id).eq('log_date', logDate),
+        supabase.from('daily_logs').select('*').eq('user_id', user.id).eq('log_date', targetDate).maybeSingle(),
+        supabase.rpc('get_daily_points', { p_date: targetDate }),
+        supabase.from('sunnah_prayer_logs').select('*').eq('user_id', user.id).eq('log_date', targetDate),
+        supabase.from('optional_adhkar_logs').select('*').eq('user_id', user.id).eq('log_date', targetDate),
+        supabase.from('dhikr_sessions').select('*').eq('user_id', user.id).eq('log_date', targetDate),
       ]);
 
       if (logRes.error) throw logRes.error;
@@ -131,6 +164,15 @@ export function useDailyData(date?: string) {
   }, [user, logDate]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    if (date) return;
+    const timer = setInterval(() => {
+      const nextDate = getDateInTimezone(groupTimezone);
+      if (nextDate !== currentDate) setCurrentDate(nextDate);
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [date, groupTimezone, currentDate]);
 
   const updateLog = async (updates: Partial<DailyLog>) => {
     if (!user) return;
@@ -212,12 +254,20 @@ export function useDailyData(date?: string) {
     if (!user) return;
     try {
       const { data, error: err } = await supabase
-        .from('dhikr_sessions')
-        .insert({ user_id: user.id, log_date: logDate, count })
-        .select()
-        .single();
+        .rpc('save_dhikr_count', { p_log_date: logDate, p_count: count });
       if (err) throw err;
-      setDhikrSessions(prev => [...prev, data as DhikrSession]);
+      const result = data as DhikrSession;
+      if (!result) return;
+
+      setDhikrSessions(prev => {
+        const idx = prev.findIndex(s => s.id === result.id);
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = result;
+          return copy;
+        }
+        return [...prev, result];
+      });
       const { data: pts } = await supabase.rpc('get_daily_points', { p_date: logDate });
       if (pts) setPoints(pts as PointsBreakdown);
     } catch (err) {

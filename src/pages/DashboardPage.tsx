@@ -9,12 +9,13 @@ import { ProgressRing } from '@/components/ui/ProgressRing';
 import { supabase } from '@/lib/supabase';
 import { useDailyData, type GroupScore, type KnowledgeContribution } from '@/hooks/useDailyData';
 import { useReminder } from '@/hooks/useReminder';
+import { shiftDate } from '@/lib/date';
 
 export function DashboardPage() {
   const { profile } = useAuth();
   const { lang } = useI18n();
   const navigate = useNavigate();
-  const { log, points } = useDailyData();
+  const { log, logDate, points } = useDailyData();
   const reminder = useReminder();
   const [groupScores, setGroupScores] = useState<GroupScore[]>([]);
   const [todayKnowledge, setTodayKnowledge] = useState<KnowledgeContribution | null>(null);
@@ -49,11 +50,8 @@ export function DashboardPage() {
         .limit(30);
       if (!data) return;
       let count = 0;
-      const today = new Date();
       for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(checkDate.getDate() - i);
-        const dateStr = checkDate.toISOString().split('T')[0];
+        const dateStr = shiftDate(logDate, -i);
         const entry = data.find(d => d.log_date === dateStr);
         if (entry && (entry.fajr || entry.dhuhr || entry.asr || entry.maghrib || entry.isha)) {
           count++;
@@ -71,12 +69,11 @@ export function DashboardPage() {
         .select('group_id')
         .eq('user_id', profile.id);
       if (!memberships || memberships.length === 0) return;
-      const today = new Date().toISOString().split('T')[0];
       const { data: scores } = await supabase
-        .rpc('get_group_daily_scores', { p_group_id: memberships[0].group_id, p_date: today });
+        .rpc('get_group_daily_scores', { p_group_id: memberships[0].group_id, p_date: logDate });
       if (scores) setGroupScores(scores as GroupScore[]);
     })();
-  }, [profile]);
+  }, [profile, logDate]);
 
   const requiredPct = points ? (points.required_points / points.max_required) * 100 : 0;
   const currentLeader = groupScores.sort((a, b) => b.total_points - a.total_points)[0];

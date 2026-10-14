@@ -13,7 +13,7 @@ import { useDailyData, type QuranEntry } from '@/hooks/useDailyData';
 export function QuranJournalPage() {
   const { profile } = useAuth();
   const { lang } = useI18n();
-  const { log, updateLog } = useDailyData();
+  const { log, logDate, updateLog } = useDailyData();
   const [entries, setEntries] = useState<QuranEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -43,7 +43,7 @@ export function QuranJournalPage() {
     if (editing) {
       await supabase.from('quran_journal').update(entryData).eq('id', editing.id);
     } else {
-      await supabase.from('quran_journal').insert({ user_id: profile.id, ...entryData });
+      await supabase.from('quran_journal').insert({ user_id: profile.id, log_date: logDate, ...entryData });
       // Mark quran_read as true in daily log
       if (!log?.quran_read) {
         await updateLog({ quran_read: true });

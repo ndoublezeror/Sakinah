@@ -6,6 +6,7 @@ import { t, formatNumber, type TranslationKey } from '@/lib/i18n';
 import { Card } from '@/components/ui/Card';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { supabase } from '@/lib/supabase';
+import { getDateInTimezone, shiftDate } from '@/lib/date';
 
 type DayData = {
   log_date: string;
@@ -25,6 +26,21 @@ export function ProgressPage() {
   useEffect(() => {
     if (!profile) return;
     (async () => {
+      const { data: memberships } = await supabase
+        .from('group_members')
+        .select('group_id')
+        .eq('user_id', profile.id);
+      const groupIds = (memberships || []).map(member => member.group_id);
+      let timezone = 'UTC';
+      if (groupIds.length > 0) {
+        const { data: groups } = await supabase
+          .from('groups')
+          .select('timezone')
+          .in('id', groupIds)
+          .limit(1);
+        timezone = groups?.[0]?.timezone || 'UTC';
+      }
+      const today = getDateInTimezone(timezone);
       const { data } = await supabase
         .from('daily_logs')
         .select('*')
@@ -40,11 +56,8 @@ export function ProgressPage() {
 
       // Streak
       let streak = 0;
-      const today = new Date();
       for (let i = 0; i < 30; i++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(checkDate.getDate() - i);
-        const dateStr = checkDate.toISOString().split('T')[0];
+        const dateStr = shiftDate(today, -i);
         const entry = allLogs.find(d => d.log_date === dateStr);
         if (entry && (entry.fajr || entry.dhuhr || entry.asr || entry.maghrib || entry.isha)) {
           streak++;

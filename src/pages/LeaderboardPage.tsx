@@ -6,6 +6,7 @@ import { t, formatNumber, formatShortDate, type TranslationKey } from '@/lib/i18
 import { Card } from '@/components/ui/Card';
 import { supabase } from '@/lib/supabase';
 import type { GroupScore } from '@/hooks/useDailyData';
+import { getDateInTimezone, shiftDate } from '@/lib/date';
 
 type GroupInfo = { id: string; name: string; timezone: string };
 type Winner = { winner_date: string; user_id: string; points: number; shared_win: boolean };
@@ -41,16 +42,6 @@ const ACTIVITY_KEYS: { key: keyof MemberProgress; label: TranslationKey }[] = [
   { key: 'morning_adhkar', label: 'morningAdhkar' },
   { key: 'evening_adhkar', label: 'eveningAdhkar' },
 ];
-
-function getDateInTimezone(tz: string): string {
-  try {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
-    }).format(new Date());
-  } catch {
-    return new Date().toISOString().split('T')[0];
-  }
-}
 
 async function getGroupMemberRows(groupId: string): Promise<MemberProgress[]> {
   const { data: memberships } = await supabase
@@ -151,12 +142,9 @@ export function LeaderboardPage() {
     } else {
       setProgress([]);
       const weeklyScores: Record<string, GroupScore> = {};
+      const currentGroupDate = getDateInTimezone(groupTz);
       for (let i = 0; i < 7; i++) {
-        const shifted = new Date();
-        shifted.setDate(shifted.getDate() - i);
-        const tzDate = new Intl.DateTimeFormat('en-CA', {
-          timeZone: groupTz, year: 'numeric', month: '2-digit', day: '2-digit',
-        }).format(shifted);
+        const tzDate = shiftDate(currentGroupDate, -i);
         const { data } = await supabase.rpc('get_group_daily_scores', { p_group_id: selectedGroup, p_date: tzDate });
         (data || []).forEach((s: GroupScore) => {
           if (!weeklyScores[s.user_id]) {
